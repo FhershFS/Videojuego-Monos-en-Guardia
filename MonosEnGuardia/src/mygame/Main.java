@@ -7,6 +7,7 @@ import com.jme3.math.ColorRGBA;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.shape.Box;
+import com.jme3.texture.Texture;
 
 public class Main extends SimpleApplication {
 
@@ -24,9 +25,13 @@ public class Main extends SimpleApplication {
         // Creamos el suelo del escenario
         Box ground = new Box(10, 0.1f, 10);
         Geometry groundGeom = new Geometry("Ground", ground);
+        
+        // Cargamos la textura de pasto
+        Texture grassTexture = assetManager.loadTexture("Textures/Terrain/grass4.jpg");
         Material groundMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        groundMat.setColor("Color", ColorRGBA.Green);
+        groundMat.setTexture("ColorMap", grassTexture); // Asignamos la textura al material
         groundGeom.setMaterial(groundMat);
+        
         rootNode.attachChild(groundGeom);
 
         // Creamos una torre (que luego será la Banana Dorada)
@@ -38,16 +43,15 @@ public class Main extends SimpleApplication {
         towerGeom.setLocalTranslation(0, 1, 0); // Posicionamos la torre
         rootNode.attachChild(towerGeom);
 
-        // Aquí puedes agregar más geometrías para representar otros elementos del escenario
-        // como los conejos, monos, enemigos, etc.
-
         // Agregamos la luz al escenario
         initLight();
     }
 
     private void initLight() {
         // Configuramos la luz ambiental
-        rootNode.addLight(new AmbientLight());
+        AmbientLight ambientLight = new AmbientLight();
+        ambientLight.setColor(ColorRGBA.White.mult(0.3f)); // Color y intensidad de la luz ambiental
+        rootNode.addLight(ambientLight);
     }
 
     @Override
