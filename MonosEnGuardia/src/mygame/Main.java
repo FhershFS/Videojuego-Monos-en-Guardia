@@ -6,6 +6,7 @@ import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
+import com.jme3.scene.Spatial;
 import com.jme3.scene.shape.Box;
 import com.jme3.texture.Texture;
 
@@ -35,14 +36,16 @@ public class Main extends SimpleApplication {
         rootNode.attachChild(groundGeom);
 
         // Creamos una torre (que luego será la Banana Dorada)
-        Box tower = new Box(1, 2, 1);
-        Geometry towerGeom = new Geometry("Tower", tower);
-        Material towerMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        towerMat.setColor("Color", ColorRGBA.Yellow);
-        towerGeom.setMaterial(towerMat);
-        towerGeom.setLocalTranslation(0, 1, 0); // Posicionamos la torre
-        rootNode.attachChild(towerGeom);
-
+        Spatial model = assetManager.loadModel("Models/monkey.j3o" );
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture Tex = assetManager.loadTexture("Textures/texture.png");
+        mat.setTexture("ColorMap", Tex);
+        model.setMaterial(mat);
+        model.scale(5f);
+        model.rotate(0,135,0);
+        model.setLocalTranslation(0, -.25f, 0); // Posicionamos la torre
+        rootNode.attachChild(model);
+        
         // Agregamos la luz al escenario
         initLight();
     }
