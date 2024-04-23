@@ -53,8 +53,9 @@ public class Main extends SimpleApplication {
         model.setMaterial(mat);
         model.scale(5f);
         model.rotate(0,135,0);
-        model.setLocalTranslation(0, -.25f, 0); // Posicionamos la torre
+        model.setLocalTranslation(0, -.25f, -5); // Posicionamos la torre
         rootNode.attachChild(model);
+       
         //Flowers
         Spatial flower1 = assetManager.loadModel("Models/flor3.j3o" );
         Material flowermat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
@@ -63,9 +64,130 @@ public class Main extends SimpleApplication {
         flowermat.setTexture("ColorMap", flowertxt);
         flower1.setMaterial(flowermat);
         flower1.scale(1);
-        model.setLocalTranslation(-6, -.25f, 0);
+        flower1.setLocalTranslation(-6, 0, 0);
         rootNode.attachChild(flower1);
         
+        //Flowers 
+        
+        Spatial flower2 = assetManager.loadModel("Models/flor3.j3o" );
+        Material flowermat2 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture flowertxt2 = assetManager.loadTexture("Textures/Flowers/flor1.png");
+        flowermat2.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
+        flowermat2.setTexture("ColorMap", flowertxt2);
+        flower2.setMaterial(flowermat2);
+        flower2.scale(1);
+        flower2.setLocalTranslation(-6, 0, 6);
+        rootNode.attachChild(flower2);
+        
+        
+        Spatial flower3 = assetManager.loadModel("Models/flor3.j3o" );
+        Material flowermat3 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture flowertxt3 = assetManager.loadTexture("Textures/Flowers/flor2.png");
+        flowermat3.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
+        flowermat3.setTexture("ColorMap", flowertxt3);
+        flower3.setMaterial(flowermat3);
+        flower3.scale(1);
+        flower3.setLocalTranslation(6, 0, -6);
+        rootNode.attachChild(flower3);
+        
+        Spatial flower4 = assetManager.loadModel("Models/flor3.j3o" );
+        Material flowermat4 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture flowertxt4 = assetManager.loadTexture("Textures/Flowers/flor3.png");
+        flowermat4.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
+        flowermat4.setTexture("ColorMap", flowertxt4);
+        flower4.setMaterial(flowermat3);
+        flower4.scale(1);
+        flower4.setLocalTranslation(6, 0, 0);
+        rootNode.attachChild(flower4);
+        
+        
+        // Quinta flor (flor2)
+        Spatial flower5 = assetManager.loadModel("Models/flor3.j3o");
+        Material flowerMat5 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture flowerTxt5 = assetManager.loadTexture("Textures/Flowers/flor2.png");
+        flowerMat5.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
+        flowerMat5.setTexture("ColorMap", flowerTxt5);
+        flower5.setMaterial(flowerMat5);
+        flower5.scale(1);
+        flower5.setLocalTranslation(-6, 0, -6);
+        rootNode.attachChild(flower5);
+
+        // Sexta flor (flor3)
+        Spatial flower6 = assetManager.loadModel("Models/flor3.j3o");
+        Material flowerMat6 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture flowerTxt6 = assetManager.loadTexture("Textures/Flowers/flor3.png");
+        flowerMat6.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
+        flowerMat6.setTexture("ColorMap", flowerTxt6);
+        flower6.setMaterial(flowerMat6);
+        flower6.scale(1);
+        flower6.setLocalTranslation(-4, 0, 4);
+        rootNode.attachChild(flower6);
+
+        // Séptima flor (flor1)
+        Spatial flower7 = assetManager.loadModel("Models/flor3.j3o");
+        Material flowerMat7 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture flowerTxt7 = assetManager.loadTexture("Textures/Flowers/flor1.png");
+        flowerMat7.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
+        flowerMat7.setTexture("ColorMap", flowerTxt7);
+        flower7.setMaterial(flowerMat7);
+        flower7.scale(1);
+        flower7.setLocalTranslation(9, 0, -3);
+        rootNode.attachChild(flower7);
+
+        // Octava flor (flor2)
+        Spatial flower8 = assetManager.loadModel("Models/flor3.j3o");
+        Material flowerMat8 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture flowerTxt8 = assetManager.loadTexture("Textures/Flowers/flor1.png");
+        flowerMat8.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
+        flowerMat8.setTexture("ColorMap", flowerTxt8);
+        flower8.setMaterial(flowerMat8);
+        flower8.scale(1);
+        flower8.setLocalTranslation(6, 0, 3);
+        rootNode.attachChild(flower8);
+
+        // Novena flor (flor3)
+        Spatial flower9 = assetManager.loadModel("Models/flor3.j3o");
+        Material flowerMat9 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture flowerTxt9 = assetManager.loadTexture("Textures/Flowers/flor3.png");
+        flowerMat9.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
+        flowerMat9.setTexture("ColorMap", flowerTxt9);
+        flower9.setMaterial(flowerMat9);
+        flower9.scale(1);
+        flower9.setLocalTranslation(9, 0, 3);
+        rootNode.attachChild(flower9);
+
+       // Décima flor (flor1)
+        Spatial flower10 = assetManager.loadModel("Models/flor3.j3o");
+        Material flowerMat10 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture flowerTxt10 = assetManager.loadTexture("Textures/Flowers/flor1.png");
+        flowerMat10.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
+        flowerMat10.setTexture("ColorMap", flowerTxt10);
+        flower10.setMaterial(flowerMat10);
+        flower10.scale(1);
+        flower10.setLocalTranslation(-9, 0, 7);
+        rootNode.attachChild(flower10);
+
+        // Undécima flor (flor2)
+        Spatial flower11 = assetManager.loadModel("Models/flor3.j3o");
+        Material flowerMat11 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture flowerTxt11 = assetManager.loadTexture("Textures/Flowers/flor2.png");
+        flowerMat11.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
+        flowerMat11.setTexture("ColorMap", flowerTxt11);
+        flower11.setMaterial(flowerMat11);
+        flower11.scale(1);
+        flower11.setLocalTranslation(-8, 0, 2);
+        rootNode.attachChild(flower11);
+        
+        // Duodécima flor (flor3)
+        Spatial flower12 = assetManager.loadModel("Models/flor3.j3o");
+        Material flowerMat12 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture flowerTxt12 = assetManager.loadTexture("Textures/Flowers/flor3.png");
+        flowerMat12.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
+        flowerMat12.setTexture("ColorMap", flowerTxt12);
+        flower12.setMaterial(flowerMat12);
+        flower12.scale(1);
+        flower12.setLocalTranslation(8, 0, 7);
+        rootNode.attachChild(flower12);
         
         // Agregamos la luz al escenario
         initLight();
