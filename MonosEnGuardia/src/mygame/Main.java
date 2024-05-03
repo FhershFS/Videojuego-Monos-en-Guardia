@@ -7,16 +7,23 @@ import com.jme3.light.AmbientLight;
 import com.jme3.material.Material;
 import com.jme3.material.RenderState;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.Vector3f;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Spatial;
 import com.jme3.scene.shape.Box;
+import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
 
 public class Main extends SimpleApplication {
 
     public static void main(String[] args) {
+        AppSettings settings = new AppSettings(true);
+        settings.setTitle("Monos en Guardia");
+        settings.setSettingsDialogImage("Interface/INICIO.png");
+        settings.setFullscreen(true);
         Main app = new Main();
+        app.setSettings(settings);
         app.start();
     }
 
@@ -33,17 +40,19 @@ public class Main extends SimpleApplication {
         rootNode.attachChild(music);
         music.play();
         
-        // Creamos el suelo del escenario
-        Box ground = new Box(10, 0.1f, 10);
-        Geometry groundGeom = new Geometry("Ground", ground);
+        cam.setLocation(new Vector3f(0, 2, 15)); // Establece la posición de la cámara
+        cam.lookAt(Vector3f.ZERO, Vector3f.UNIT_Y);
         
+        // Creamos el suelo del escenario
+        Spatial ground = assetManager.loadModel("Models/escenario.j3o" );
         // Cargamos la textura de pasto
-        Texture grassTexture = assetManager.loadTexture("Textures/Terrain/grass3.jpg");
+        Texture grassTexture = assetManager.loadTexture("Textures/Terrain/pasto.png");
         Material groundMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         groundMat.setTexture("ColorMap", grassTexture); // Asignamos la textura al material
-        groundGeom.setMaterial(groundMat);
-        
-        rootNode.attachChild(groundGeom);
+        ground.setMaterial(groundMat);
+        ground.scale(6.5f);
+        ground.setLocalTranslation(0, -2.5f, 0);
+        rootNode.attachChild(ground);
 
         // Creamos una torre (que luego será la Banana Dorada)
         Spatial model = assetManager.loadModel("Models/monkey.j3o" );
@@ -51,9 +60,9 @@ public class Main extends SimpleApplication {
         Texture Tex = assetManager.loadTexture("Textures/texture.png");
         mat.setTexture("ColorMap", Tex);
         model.setMaterial(mat);
-        model.scale(5f);
-        model.rotate(0,135,0);
-        model.setLocalTranslation(0, -.25f, -5); // Posicionamos la torre
+        model.scale(7f);
+        model.rotate(0,3.2f,0);
+        model.setLocalTranslation(0, -.3f, -5); // Posicionamos la torre
         rootNode.attachChild(model);
        
         //Flowers
@@ -62,6 +71,7 @@ public class Main extends SimpleApplication {
         Texture flowertxt = assetManager.loadTexture("Textures/Flowers/flor3.png");
         flowermat.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
         flowermat.setTexture("ColorMap", flowertxt);
+        flowermat.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
         flower1.setMaterial(flowermat);
         flower1.scale(1);
         flower1.setLocalTranslation(-6, 0, 0);
@@ -191,6 +201,18 @@ public class Main extends SimpleApplication {
         
         // Agregamos la luz al escenario
         initLight();
+        
+        // Caminito
+        Spatial caminito = assetManager.loadModel("Models/Caminito.j3o");
+        Material caminitomat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture caminitotxt = assetManager.loadTexture("Textures/Terrain/caminito.png");
+        caminitomat.setTexture("ColorMap",caminitotxt);
+        caminito.setMaterial(caminitomat);
+        caminito.scale(3.4f);
+        caminito.rotate(0,7.9f,0);
+        caminito.setLocalTranslation(.2f, -.8f, 3.6f);
+        rootNode.attachChild(caminito);
+        
     }
 
     private void initLight() {
