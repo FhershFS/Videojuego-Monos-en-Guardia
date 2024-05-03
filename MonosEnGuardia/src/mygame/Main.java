@@ -1,24 +1,31 @@
 package mygame;
 
 import com.jme3.app.SimpleApplication;
-import com.jme3.audio.AudioData.DataType;
 import com.jme3.audio.AudioNode;
-import com.jme3.light.AmbientLight;
+import com.jme3.input.KeyInput;
+import com.jme3.input.controls.ActionListener;
+import com.jme3.input.controls.KeyTrigger;
 import com.jme3.light.DirectionalLight;
 import com.jme3.material.Material;
-import com.jme3.material.RenderState;
 import com.jme3.material.RenderState.BlendMode;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.FastMath;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
+import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
-import com.jme3.scene.shape.Box;
-import com.jme3.scene.shape.Sphere;
 import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
 
 public class Main extends SimpleApplication {
+
+
+    private Node enemyNode; // Nodo para contener a los enemigos
+    private Node targetNode; // Nodo de la banana dorada
+    private float spawnTimer = 0f;
+    private float spawnInterval = 2f; // Intervalo de tiempo entre la generación de enemigos
+
 
     public static void main(String[] args) {
         AppSettings settings = new AppSettings(true);
@@ -33,6 +40,14 @@ public class Main extends SimpleApplication {
     @Override
     public void simpleInitApp() {
         initScene();
+        // Inicializar nodos
+        enemyNode = new Node("enemyNode");
+        rootNode.attachChild(enemyNode);
+
+        // Crear torre de la banana dorada y establecerla como objetivo
+        targetNode = new Node("targetNode");
+        targetNode.setLocalTranslation(0, -.3f, -5); // Posicionamiento de la torre de la banana dorada
+        rootNode.attachChild(targetNode);
     }
 
     private void initScene() {
@@ -138,9 +153,7 @@ public class Main extends SimpleApplication {
             flower.setLocalTranslation(flowerPositions[i]);
             rootNode.attachChild(flower);
         }
-
-
-
+       
         // Caminito
         Spatial caminito = assetManager.loadModel("Models/Caminito.j3o");
         Material caminitomat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
@@ -163,15 +176,54 @@ public class Main extends SimpleApplication {
         caminito2.setLocalTranslation(.2f, -.8f, 16.65f);
         rootNode.attachChild(caminito2);
         
-    }
 
+        
+    }
     @Override
     public void simpleUpdate(float tpf) {
-        // Aquí irá la lógica de actualización del juego (movimiento, colisiones, etc.)
+         // Generar enemigos
+        spawnTimer += tpf;
+        if (spawnTimer >= spawnInterval) {
+            spawnEnemy();
+            spawnTimer = 0f;
+        }
+
+        // Mover enemigos hacia la torre de la banana dorada de manera menos lineal
+        for (Spatial enemy : enemyNode.getChildren()) {
+            Vector3f enemyPos = enemy.getWorldTranslation();
+            Vector3f targetPos = targetNode.getWorldTranslation();
+            Vector3f direction = targetPos.subtract(enemyPos).normalizeLocal();
+            float distance = enemyPos.distance(targetPos);
+
+            // Si el enemigo está lejos, interpolamos su posición para suavizar el movimiento
+            if (distance > 1f) {
+                Vector3f interpolatedPos = enemyPos.add(direction.mult(tpf * 2f));
+                enemy.setLocalTranslation(interpolatedPos);
+            } else {
+                // Si el enemigo está cerca, lo movemos directamente hacia la torre
+                enemy.move(direction.mult(tpf * 2f));
+            }
+        }
     }
 
     @Override
     public void simpleRender(RenderManager rm) {
         // Aquí se podría agregar código para renderizar elementos adicionales
     }
+     private void spawnEnemy() {
+        // Cargar modelo del enemigo (por ejemplo, un mono)
+        Spatial enemy = assetManager.loadModel("Models/cojeno.j3o");
+        Material enemym = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture enemyt = assetManager.loadTexture("Textures/cojeno.png");
+        enemym.setTexture("ColorMap",enemyt);
+        enemy.setMaterial(enemym);
+        enemy.rotate(0,3,0);
+        // Posicionamiento aleatorio en la torre oscura
+        Vector3f spawnPosition = new Vector3f(FastMath.nextRandomFloat() * 10 - 5, 0.5f, FastMath.nextRandomFloat() * 10 + 15);
+        enemy.setLocalTranslation(spawnPosition);
+
+        // Agregar el enemigo al nodo de enemigos
+        enemyNode.attachChild(enemy);
+    }
+
 }
