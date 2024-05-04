@@ -24,8 +24,8 @@ public class Main extends SimpleApplication {
     private Node enemyNode; // Nodo para contener a los enemigos
     private Node targetNode; // Nodo de la banana dorada
     private float spawnTimer = 0f;
-    private float spawnInterval = 2f; // Intervalo de tiempo entre la generación de enemigos
-
+    private float spawnInterval = 3f; // Intervalo de tiempo entre la generación de enemigos
+    private Node bananaNode;
 
     public static void main(String[] args) {
         AppSettings settings = new AppSettings(true);
@@ -48,6 +48,14 @@ public class Main extends SimpleApplication {
         targetNode = new Node("targetNode");
         targetNode.setLocalTranslation(0, -.3f, -5); // Posicionamiento de la torre de la banana dorada
         rootNode.attachChild(targetNode);
+        
+        // Inicializar el nodo para los plátanos
+        bananaNode = new Node("bananaNode");
+        rootNode.attachChild(bananaNode);
+
+        // Configurar el control de entrada para disparar plátanos
+        inputManager.addMapping("Disparar", new KeyTrigger(KeyInput.KEY_SPACE));
+        inputManager.addListener(actionListener, "Disparar");
     }
 
     private void initScene() {
@@ -114,42 +122,44 @@ public class Main extends SimpleApplication {
         // Array de posiciones de las flores
         Vector3f[] flowerPositions = {
             new Vector3f(-6, 0, 6),
-            new Vector3f(6, 0, -6),
+            new Vector3f(6.5f, 0, -6),
             new Vector3f(6, 0, 0),
             new Vector3f(-6, 0, -6),
             new Vector3f(-4, 0, 4),
             new Vector3f(9, 0, -3),
             new Vector3f(6, 0, 3),
-            new Vector3f(9, 0, 3),
+            new Vector3f(9.5f, 0, 3),
             new Vector3f(-9, 0, 7),
             new Vector3f(-8, 0, 2),
-            new Vector3f(8, 0, 7)
+            new Vector3f(8, 0, 7),
+            new Vector3f(5.5f, 0, 9)
         };
 
         // Array de texturas de las flores
         String[] flowerTextures = {
-            "Textures/Flowers/flor1.png",
-            "Textures/Flowers/flor2.png",
-            "Textures/Flowers/flor3.png",
-            "Textures/Flowers/flor2.png",
-            "Textures/Flowers/flor3.png",
-            "Textures/Flowers/flor1.png",
-            "Textures/Flowers/flor1.png",
-            "Textures/Flowers/flor3.png",
-            "Textures/Flowers/flor1.png",
-            "Textures/Flowers/flor2.png",
-            "Textures/Flowers/flor3.png"
+            "Textures/Flowers/amapola.png",
+            "Textures/Flowers/flor morada.png",
+            "Textures/Flowers/girasol.png",
+            "Textures/Flowers/flor morada.png",
+            "Textures/Flowers/girasol.png",
+            "Textures/Flowers/amapola.png",
+            "Textures/Flowers/amapola.png",
+            "Textures/Flowers/girasol.png",
+            "Textures/Flowers/amapola.png",
+            "Textures/Flowers/flor morada.png",
+            "Textures/Flowers/girasol.png",
+            "Textures/Flowers/amapola.png",
         };
 
         // Crear y agregar las flores
         for (int i = 0; i < flowerPositions.length; i++) {
-            Spatial flower = assetManager.loadModel("Models/flor3.j3o");
+            Spatial flower = assetManager.loadModel("Models/flor.j3o");
             Material flowerMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
             Texture flowerTxt = assetManager.loadTexture(flowerTextures[i]);
             flowerMat.setTexture("ColorMap", flowerTxt);
-            flowerMat.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
             flower.setMaterial(flowerMat);
-            flower.scale(1);
+            flower.scale(3);
+            flower.rotate(0,4.5f,0);
             flower.setLocalTranslation(flowerPositions[i]);
             rootNode.attachChild(flower);
         }
@@ -176,7 +186,53 @@ public class Main extends SimpleApplication {
         caminito2.setLocalTranslation(.2f, -.8f, 16.65f);
         rootNode.attachChild(caminito2);
         
+        //torresitas
+        // Array de posiciones de las torresitas
+        Vector3f[] torresPositions = {
+            new Vector3f(6, 0.5f, 20),
+            new Vector3f(3.5f, 0.5f, 25),
+            new Vector3f(-3.5f,0.5f, 25),
+            new Vector3f(-6, 0.5f, 20),
+        };
 
+        // Crear y agregar las torresitas
+        for (int i = 0; i < torresPositions.length; i++) {
+            Spatial torresita = assetManager.loadModel("Models/tower.j3o");
+            Material torresitaM = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+            Texture torresitaT = assetManager.loadTexture("Textures/torredark.png");
+            torresitaM.setTexture("ColorMap", torresitaT);
+            torresita .setMaterial(torresitaM);
+            torresita .scale(1.5f);
+            torresita .setLocalTranslation(torresPositions[i]);
+            rootNode.attachChild(torresita );
+        }
+        
+        //arbol
+        Spatial arbol = assetManager.loadModel("Models/arbol.j3o");
+        Material arbolm = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture arbolt = assetManager.loadTexture("Textures/arbol.png");
+        arbolm.setTexture("ColorMap",arbolt);
+        arbol.setMaterial(arbolm);
+        arbol.scale(2.5f);
+        arbol.rotate(0,2f,0);
+        arbol.setLocalTranslation(-3.5f, .1f, 9f);
+        rootNode.attachChild(arbol);
+        
+        //arbol2
+        Spatial arbol2 = assetManager.loadModel("Models/arbol.j3o");
+        arbol2.setMaterial(arbolm);
+        arbol2.scale(2.5f);
+        arbol2.rotate(0,2f,0);
+        arbol2.setLocalTranslation(5f,.1f, 4f);
+        rootNode.attachChild(arbol2);
+        
+        //arbol3
+        Spatial arbol3 = assetManager.loadModel("Models/arbol.j3o");
+        arbol3.setMaterial(arbolm);
+        arbol3.scale(2.5f);
+        arbol3.rotate(0,2f,0);
+        arbol3.setLocalTranslation(-3f, .1f, 2f);
+        rootNode.attachChild(arbol3);
         
     }
     @Override
@@ -205,6 +261,16 @@ public class Main extends SimpleApplication {
             }
         }
     }
+    // ActionListener para controlar el disparo de plátanos
+    private ActionListener actionListener = new ActionListener() {
+        @Override
+        public void onAction(String name, boolean isPressed, float tpf) {
+            if (name.equals("Disparar") && isPressed) {
+                // Disparar plátano
+                shootBanana();
+            }
+        }
+    };
 
     @Override
     public void simpleRender(RenderManager rm) {
@@ -224,6 +290,30 @@ public class Main extends SimpleApplication {
 
         // Agregar el enemigo al nodo de enemigos
         enemyNode.attachChild(enemy);
+    }
+    // Método para disparar un plátano
+
+    private void shootBanana() {
+        // Crear un plátano
+        Spatial banana = assetManager.loadModel("Models/banana.j3o");
+        Material bananaMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        // Configurar material y textura del plátano
+        banana.setMaterial(bananaMat);
+
+        // Posicionar el plátano en la posición del jugador
+        banana.setLocalTranslation(cam.getLocation());
+
+        // Calcular dirección del disparo
+        Vector3f direction = cam.getDirection();
+
+        // Configurar velocidad del plátano
+        float speed = 10f;
+
+        // Añadir control de movimiento al plátano
+        banana.addControl(new BananaControl(direction.mult(speed)));
+
+        // Agregar el plátano al nodo de plátanos
+        bananaNode.attachChild(banana);
     }
 
 }
