@@ -2,35 +2,33 @@ package mygame;
 
 import com.jme3.app.SimpleApplication;
 import com.jme3.audio.AudioNode;
+import com.jme3.bullet.BulletAppState;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.light.DirectionalLight;
 import com.jme3.material.Material;
-import com.jme3.material.RenderState.BlendMode;
-import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.RenderManager;
-import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
 import com.jme3.ui.Picture;
+import java.util.Iterator;
 
 public class Main extends SimpleApplication {
 
-
-    private Node enemyNode; // Nodo para contener a los enemigos
-    private Node targetNode; // Nodo de la banana dorada
+    private Node enemyNode;
+    private Node targetNode;
     private float spawnTimer = 0f;
-    private float spawnInterval = 3f; // Intervalo de tiempo entre la generación de enemigos
+    private float spawnInterval = .1f;
     private Node bananaNode;
     private AudioNode shootingSound;
     private Picture crosshair;
-    private boolean isShooting = false;
     private Node bulletNode;
+    private BulletAppState bulletAppState;
 
     public static void main(String[] args) {
         AppSettings settings = new AppSettings(true);
@@ -45,52 +43,46 @@ public class Main extends SimpleApplication {
     @Override
     public void simpleInitApp() {
         initScene();
-        // Inicializar nodos
         enemyNode = new Node("enemyNode");
         rootNode.attachChild(enemyNode);
 
-        // Crear torre de la banana dorada y establecerla como objetivo
         targetNode = new Node("targetNode");
-        targetNode.setLocalTranslation(0, -.3f, -5); // Posicionamiento de la torre de la banana dorada
+        targetNode.setLocalTranslation(0, -.3f, -5);
         rootNode.attachChild(targetNode);
         
-        // Inicializar el nodo para los plátanos
         bananaNode = new Node("bananaNode");
         rootNode.attachChild(bananaNode);
         
-          // Cargar el sonido de disparo
         shootingSound = new AudioNode(assetManager, "Sounds/banana.wav", false);
-        shootingSound.setPositional(false); // Establecer como no posicional
-        shootingSound.setLooping(false); // Reproducir una sola vez
-        shootingSound.setVolume(0.5f); // Ajustar el volumen según sea necesario
+        shootingSound.setPositional(false);
+        shootingSound.setLooping(false);
+        shootingSound.setVolume(0.5f);
         rootNode.attachChild(shootingSound);
         
-        // Cargar la textura de la mirilla
         crosshair = new Picture("Crosshair");
-        crosshair.setImage(assetManager, "Textures/crosshair2.png", true);
-        
-        // Obtener el tamaño de la pantalla
+        crosshair.setImage(assetManager, "Textures/crosshair.png", true);
         float screenWidth = settings.getWidth();
         float screenHeight = settings.getHeight();
-        
-        // Establecer el tamaño de la mirilla
         float crosshairWidth = screenWidth * 0.05f;
         float crosshairHeight = screenHeight * 0.05f;
-        
         crosshair.setWidth(crosshairWidth);
         crosshair.setHeight(crosshairHeight);
-        
-        // Centrar la mirilla en la pantalla
         float crosshairPosX = (screenWidth - crosshairWidth) * 0.5f;
         float crosshairPosY = (screenHeight - crosshairHeight) * 0.5f;
         crosshair.setPosition(crosshairPosX, crosshairPosY);
-        
         guiNode.attachChild(crosshair);
         
+        inputManager.addMapping("Disparar", new KeyTrigger(KeyInput.KEY_SPACE));
+        inputManager.addListener(actionListener, "Disparar"); 
         
+        bulletNode = new Node("bulletNode");
+        rootNode.attachChild(bulletNode);      
+        
+        bulletAppState = new BulletAppState();
+        stateManager.attach(bulletAppState);
     }
 
-    private void initScene() {
+   private void initScene() {
         AudioNode music = new AudioNode(assetManager, "Sounds/musica.wav", true);
         music.setPositional(false);
         music.setLooping(true);
@@ -267,51 +259,80 @@ public class Main extends SimpleApplication {
         rootNode.attachChild(arbol3);
         
     }
+
     @Override
     public void simpleUpdate(float tpf) {
-         // Generar enemigos
         spawnTimer += tpf;
         if (spawnTimer >= spawnInterval) {
             spawnEnemy();
             spawnTimer = 0f;
         }
 
-        // Mover enemigos hacia la torre de la banana dorada de manera menos lineal
         for (Spatial enemy : enemyNode.getChildren()) {
             Vector3f enemyPos = enemy.getWorldTranslation();
             Vector3f targetPos = targetNode.getWorldTranslation();
             Vector3f direction = targetPos.subtract(enemyPos).normalizeLocal();
             float distance = enemyPos.distance(targetPos);
 
-            // Si el enemigo está lejos, interpolamos su posición para suavizar el movimiento
             if (distance > 1f) {
                 Vector3f interpolatedPos = enemyPos.add(direction.mult(tpf * 2f));
                 enemy.setLocalTranslation(interpolatedPos);
             } else {
-                // Si el enemigo está cerca, lo movemos directamente hacia la torre
                 enemy.move(direction.mult(tpf * 2f));
             }
         }
+
+        for (Iterator<Spatial> it = bulletNode.getChildren().iterator(); it.hasNext();) {
+            Spatial bullet = it.next();
+            for (Iterator<Spatial> enemyIterator = enemyNode.getChildren().iterator(); enemyIterator.hasNext();) {
+                Spatial enemy = enemyIterator.next();
+                if (bullet.getWorldBound().intersects(enemy.getWorldBound())) {
+                    enemy.removeFromParent();
+                    bullet.removeFromParent();
+                }
+            }
+        }
     }
-   
+    
+    private final ActionListener actionListener = new ActionListener() {
+        @Override
+        public void onAction(String name, boolean keyPressed, float tpf) {
+            if (name.equals("Disparar") && !keyPressed) {
+                disparar();
+            }
+        }
+    };
+    
+    private void disparar() {
+        Spatial bullet = assetManager.loadModel("Models/banana.j3o");
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture bullett = assetManager.loadTexture("Textures/banana.png");
+        mat.setTexture("ColorMap", bullett);
+        bullet.setMaterial(mat);
+        Vector3f startPosition = cam.getLocation();
+        bullet.setLocalTranslation(startPosition);
+        Vector3f direction = cam.getDirection();
+        bulletNode.attachChild(bullet);
+        bulletAppState.getPhysicsSpace().add(bullet);
+        bullet.addControl(new BulletControl(direction));
+        shootingSound.playInstance();
+    }
 
     @Override
     public void simpleRender(RenderManager rm) {
-        // Aquí se podría agregar código para renderizar elementos adicionales
+        // Additional rendering code can be added here
     }
-     private void spawnEnemy() {
-        // Cargar modelo del enemigo (por ejemplo, un mono)
+    
+    private void spawnEnemy() {
         Spatial enemy = assetManager.loadModel("Models/cojeno.j3o");
         Material enemym = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         Texture enemyt = assetManager.loadTexture("Textures/cojeno.png");
         enemym.setTexture("ColorMap",enemyt);
         enemy.setMaterial(enemym);
         enemy.rotate(0,3,0);
-        // Posicionamiento aleatorio en la torre oscura
         Vector3f spawnPosition = new Vector3f(FastMath.nextRandomFloat() * 10 - 5, 0.5f, FastMath.nextRandomFloat() * 10 + 15);
         enemy.setLocalTranslation(spawnPosition);
-
-        // Agregar el enemigo al nodo de enemigos
         enemyNode.attachChild(enemy);
+        bulletAppState.getPhysicsSpace().add(enemy);
     }
 }
