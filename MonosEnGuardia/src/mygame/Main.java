@@ -17,6 +17,7 @@ import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
+import com.jme3.ui.Picture;
 
 public class Main extends SimpleApplication {
 
@@ -26,6 +27,10 @@ public class Main extends SimpleApplication {
     private float spawnTimer = 0f;
     private float spawnInterval = 3f; // Intervalo de tiempo entre la generación de enemigos
     private Node bananaNode;
+    private AudioNode shootingSound;
+    private Picture crosshair;
+    private boolean isShooting = false;
+    private Node bulletNode;
 
     public static void main(String[] args) {
         AppSettings settings = new AppSettings(true);
@@ -52,10 +57,37 @@ public class Main extends SimpleApplication {
         // Inicializar el nodo para los plátanos
         bananaNode = new Node("bananaNode");
         rootNode.attachChild(bananaNode);
-
-        // Configurar el control de entrada para disparar plátanos
-        inputManager.addMapping("Disparar", new KeyTrigger(KeyInput.KEY_SPACE));
-        inputManager.addListener(actionListener, "Disparar");
+        
+          // Cargar el sonido de disparo
+        shootingSound = new AudioNode(assetManager, "Sounds/banana.wav", false);
+        shootingSound.setPositional(false); // Establecer como no posicional
+        shootingSound.setLooping(false); // Reproducir una sola vez
+        shootingSound.setVolume(0.5f); // Ajustar el volumen según sea necesario
+        rootNode.attachChild(shootingSound);
+        
+        // Cargar la textura de la mirilla
+        crosshair = new Picture("Crosshair");
+        crosshair.setImage(assetManager, "Textures/crosshair2.png", true);
+        
+        // Obtener el tamaño de la pantalla
+        float screenWidth = settings.getWidth();
+        float screenHeight = settings.getHeight();
+        
+        // Establecer el tamaño de la mirilla
+        float crosshairWidth = screenWidth * 0.05f;
+        float crosshairHeight = screenHeight * 0.05f;
+        
+        crosshair.setWidth(crosshairWidth);
+        crosshair.setHeight(crosshairHeight);
+        
+        // Centrar la mirilla en la pantalla
+        float crosshairPosX = (screenWidth - crosshairWidth) * 0.5f;
+        float crosshairPosY = (screenHeight - crosshairHeight) * 0.5f;
+        crosshair.setPosition(crosshairPosX, crosshairPosY);
+        
+        guiNode.attachChild(crosshair);
+        
+        
     }
 
     private void initScene() {
@@ -261,16 +293,7 @@ public class Main extends SimpleApplication {
             }
         }
     }
-    // ActionListener para controlar el disparo de plátanos
-    private ActionListener actionListener = new ActionListener() {
-        @Override
-        public void onAction(String name, boolean isPressed, float tpf) {
-            if (name.equals("Disparar") && isPressed) {
-                // Disparar plátano
-                shootBanana();
-            }
-        }
-    };
+   
 
     @Override
     public void simpleRender(RenderManager rm) {
@@ -291,29 +314,4 @@ public class Main extends SimpleApplication {
         // Agregar el enemigo al nodo de enemigos
         enemyNode.attachChild(enemy);
     }
-    // Método para disparar un plátano
-
-    private void shootBanana() {
-        // Crear un plátano
-        Spatial banana = assetManager.loadModel("Models/banana.j3o");
-        Material bananaMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        // Configurar material y textura del plátano
-        banana.setMaterial(bananaMat);
-
-        // Posicionar el plátano en la posición del jugador
-        banana.setLocalTranslation(cam.getLocation());
-
-        // Calcular dirección del disparo
-        Vector3f direction = cam.getDirection();
-
-        // Configurar velocidad del plátano
-        float speed = 10f;
-
-        // Añadir control de movimiento al plátano
-        banana.addControl(new BananaControl(direction.mult(speed)));
-
-        // Agregar el plátano al nodo de plátanos
-        bananaNode.attachChild(banana);
-    }
-
 }
