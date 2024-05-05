@@ -338,11 +338,31 @@ public class Main extends SimpleApplication {
             }
         }
 
-        // Verificar si el contador de enemigos muertos alcanza un múltiplo de 10
-        if (deadEnemies > 0 && deadEnemies % 10 == 0) {
-            // Reducir el intervalo de aparición en un 10%
-            spawnInterval *= 0.9f;
+        if (deadEnemies > 10) {
+            spawnInterval = 2.5f;
         }
+        if (deadEnemies > 20) {
+            spawnInterval = 2f;
+        }
+         if (deadEnemies > 30) {
+            spawnInterval = 1.5f;
+        }
+         if (deadEnemies > 40) {
+            spawnInterval = 1.25f;
+        }
+         if (deadEnemies > 50) {
+            spawnInterval = 1f;
+        }
+         if (deadEnemies > 60) {
+            spawnInterval = .75f;
+        }
+         if (deadEnemies > 90) {
+            spawnInterval = .5f;
+        }
+         if (deadEnemies > 150){
+            spawnInterval = .25f;
+        }
+         
     }
 
     private void disparar() {
