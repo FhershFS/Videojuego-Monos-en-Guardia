@@ -27,9 +27,14 @@ public class Main extends SimpleApplication {
     private float spawnTimer = 0f;
     private float spawnInterval = 3f;
 
+    private int vidaTorre = 10; // Vida inicial de la torre
+    private Spatial model;
+
     private int deadEnemies = 0;
     private Node bananaNode;
     private BitmapText deathCountText;
+    private BitmapText vidaText;
+
     private int deathCount = 0;
     private AudioNode shootingSound;
     private Picture crosshair;
@@ -100,14 +105,21 @@ public class Main extends SimpleApplication {
 
         bulletAppState = new BulletAppState();
         stateManager.attach(bulletAppState);
-        
-         // Inicializar el contador de muertes
+
+        // Inicializar el contador de muertes
         deathCountText = new BitmapText(guiFont, false);
-        deathCountText.setSize(guiFont.getCharSet().getRenderedSize());      
+        deathCountText.setSize(guiFont.getCharSet().getRenderedSize());
         deathCountText.setColor(ColorRGBA.Yellow); // Color del texto
         deathCountText.setText("Enemigos: 0");
         deathCountText.setLocalTranslation(10, settings.getHeight() - 10, 0); // Posición del texto en la pantalla
         guiNode.attachChild(deathCountText);
+
+        vidaText = new BitmapText(guiFont, false);
+        vidaText.setSize(guiFont.getCharSet().getRenderedSize());
+        vidaText.setColor(ColorRGBA.Green); // Color del texto
+        vidaText.setText("Vida de la Torre: " + vidaTorre); // Texto inicial
+        vidaText.setLocalTranslation(settings.getWidth()-180, settings.getHeight() - 10, 0); // Posición del texto en la pantalla
+        guiNode.attachChild(vidaText);
     }
 
     private void initScene() {
@@ -118,8 +130,8 @@ public class Main extends SimpleApplication {
         rootNode.attachChild(music);
         music.play();
 
-        cam.setLocation(new Vector3f(0, 2, 15)); // Establece la posición de la cámara
-        cam.lookAt(Vector3f.ZERO, Vector3f.UNIT_Y);
+        cam.setLocation(new Vector3f(-3.5f, 4f, 9f)); // Establece la posición de la cámara
+        cam.lookAt(new Vector3f(2, 0, 40), Vector3f.UNIT_Y);
 
         // Creamos el suelo del escenario
         Spatial ground = assetManager.loadModel("Models/escenario.j3o");
@@ -144,7 +156,7 @@ public class Main extends SimpleApplication {
         rootNode.attachChild(ground2);
 
         // Creamos una torre (que luego será la Banana Dorada)
-        Spatial model = assetManager.loadModel("Models/monkey.j3o");
+        model = assetManager.loadModel("Models/monkey.j3o");
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         Texture Tex = assetManager.loadTexture("Textures/texture.png");
         mat.setTexture("ColorMap", Tex);
@@ -321,6 +333,7 @@ public class Main extends SimpleApplication {
     };
 
     private void handleCollisions() {
+        // Detección de colisión entre balas y enemigos
         for (Iterator<Spatial> bulletIterator = bulletNode.getChildren().iterator(); bulletIterator.hasNext();) {
             Spatial bullet = bulletIterator.next();
             for (Iterator<Spatial> enemyIterator = enemyNode.getChildren().iterator(); enemyIterator.hasNext();) {
@@ -338,31 +351,58 @@ public class Main extends SimpleApplication {
             }
         }
 
+        // Detección de colisión entre enemigos y la torre
+        for (Iterator<Spatial> enemyIterator = enemyNode.getChildren().iterator(); enemyIterator.hasNext();) {
+            Spatial enemy = enemyIterator.next();
+            if (enemy.getWorldTranslation().z < -5) { // Comprobamos si el enemigo ha llegado a la coordenada z de la torre
+                enemy.removeFromParent(); // Eliminamos el enemigo
+                vidaTorre--; // Reducimos la vida de la torre
+                vidaText.setText("Vida de la Torre: " + vidaTorre); // Actualizamos el texto de la vida de la torre en pantalla
+                switch (vidaTorre) {
+                    case 7 -> vidaText.setColor(ColorRGBA.Yellow);
+                    case 5 -> vidaText.setColor(ColorRGBA.Orange);
+                    case 3 -> vidaText.setColor(ColorRGBA.Red);
+                    default -> {
+                    }
+                }
+                if (vidaTorre <= 0) {
+                    gameOver(); // Llamamos al método de Game Over si la vida de la torre llega a 0
+                }
+            }
+        }
+
+        // Ajuste del intervalo de aparición de enemigos en función del número de enemigos muertos
         if (deadEnemies > 10) {
             spawnInterval = 2.5f;
         }
         if (deadEnemies > 20) {
             spawnInterval = 2f;
         }
-         if (deadEnemies > 30) {
+        if (deadEnemies > 30) {
             spawnInterval = 1.5f;
         }
-         if (deadEnemies > 40) {
+        if (deadEnemies > 40) {
             spawnInterval = 1.25f;
         }
-         if (deadEnemies > 50) {
+        if (deadEnemies > 50) {
             spawnInterval = 1f;
         }
-         if (deadEnemies > 60) {
+        if (deadEnemies > 60) {
             spawnInterval = .75f;
         }
-         if (deadEnemies > 90) {
+        if (deadEnemies > 90) {
             spawnInterval = .5f;
         }
-         if (deadEnemies > 150){
+        if (deadEnemies > 150) {
             spawnInterval = .25f;
         }
-         
+    }
+
+    private void gameOver() {
+        // Lógica para mostrar el mensaje de Game Over y detener el juego
+        System.out.println("Game Over");
+        // Por ejemplo, puedes mostrar un mensaje en la consola y cerrar la aplicación
+        stop(); // Detiene la aplicación
     }
 
     private void disparar() {
