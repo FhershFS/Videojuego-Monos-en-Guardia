@@ -23,12 +23,13 @@ public class Main extends SimpleApplication {
     private Node enemyNode;
     private Node targetNode;
     private float spawnTimer = 0f;
-    private float spawnInterval = .1f;
+    private float spawnInterval = 3f;
     private Node bananaNode;
     private AudioNode shootingSound;
     private Picture crosshair;
     private Node bulletNode;
     private BulletAppState bulletAppState;
+    private AudioNode deadSound; // Declaración del AudioNode
 
     public static void main(String[] args) {
         AppSettings settings = new AppSettings(true);
@@ -56,8 +57,14 @@ public class Main extends SimpleApplication {
         shootingSound = new AudioNode(assetManager, "Sounds/banana.wav", false);
         shootingSound.setPositional(false);
         shootingSound.setLooping(false);
-        shootingSound.setVolume(0.5f);
+        shootingSound.setVolume(0.25f);
         rootNode.attachChild(shootingSound);
+        
+        deadSound = new AudioNode(assetManager, "Sounds/dead.wav", false);
+        deadSound.setPositional(false);
+        deadSound.setLooping(false);
+        deadSound.setVolume(1f);
+        rootNode.attachChild(deadSound);
         
         crosshair = new Picture("Crosshair");
         crosshair.setImage(assetManager, "Textures/crosshair.png", true);
@@ -289,9 +296,11 @@ public class Main extends SimpleApplication {
                 if (bullet.getWorldBound().intersects(enemy.getWorldBound())) {
                     enemy.removeFromParent();
                     bullet.removeFromParent();
+                    deadSound.playInstance(); // Reproducir el sonido de muerte
                 }
             }
         }
+
     }
     
     private final ActionListener actionListener = new ActionListener() {
