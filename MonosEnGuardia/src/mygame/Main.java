@@ -37,6 +37,7 @@ public class Main extends SimpleApplication {
 
     private int deathCount = 0;
     private AudioNode shootingSound;
+    private AudioNode damageSound;
     private Picture crosshair;
     private Node bulletNode;
     private BulletAppState bulletAppState;
@@ -82,7 +83,16 @@ public class Main extends SimpleApplication {
         deadSound.setPositional(false);
         deadSound.setLooping(false);
         deadSound.setVolume(1f);
+        deadSound.setPitch(.5f);
         rootNode.attachChild(deadSound);
+        
+        damageSound = new AudioNode(assetManager, "Sounds/damage.wav", false);
+        damageSound.setPositional(false);
+        damageSound.setLooping(false);
+        damageSound.setVolume(.75f);
+        damageSound.setPitch(1.25f);
+        rootNode.attachChild(damageSound);
+
 
         crosshair = new Picture("Crosshair");
         crosshair.setImage(assetManager, "Textures/crosshair.png", true);
@@ -357,6 +367,7 @@ public class Main extends SimpleApplication {
             if (enemy.getWorldTranslation().z < -5) { // Comprobamos si el enemigo ha llegado a la coordenada z de la torre
                 enemy.removeFromParent(); // Eliminamos el enemigo
                 vidaTorre--; // Reducimos la vida de la torre
+                damageSound.playInstance(); // Reproducir el sonido de muerte
                 vidaText.setText("Vida de la Torre: " + vidaTorre); // Actualizamos el texto de la vida de la torre en pantalla
                 switch (vidaTorre) {
                     case 7 -> vidaText.setColor(ColorRGBA.Yellow);
