@@ -43,6 +43,9 @@ public class Main extends SimpleApplication {
     private BulletAppState bulletAppState;
     private AudioNode deadSound; // Declaración del AudioNode
 
+    private float pauseTimer = 0f;
+    private boolean isGameOver = false;
+
     public static void main(String[] args) {
         AppSettings settings = new AppSettings(true);
         settings.setTitle("Monos en Guardia");
@@ -61,6 +64,12 @@ public class Main extends SimpleApplication {
     @Override
     public void simpleInitApp() {
         setDisplayStatView(false);
+
+        cam.setLocation(new Vector3f(-3.5f, 4f, 9f));
+        cam.lookAt(new Vector3f(2, 0, 40), Vector3f.UNIT_Y);
+
+        flyCam.setMoveSpeed(0); // Deshabilitar el movimiento con las teclas
+        flyCam.setZoomSpeed(0); // Deshabilitar el zoom con las teclas
 
         initScene();
         enemyNode = new Node("enemyNode");
@@ -85,14 +94,12 @@ public class Main extends SimpleApplication {
         deadSound.setVolume(1f);
         deadSound.setPitch(.5f);
         rootNode.attachChild(deadSound);
-        
+
         damageSound = new AudioNode(assetManager, "Sounds/damage.wav", false);
         damageSound.setPositional(false);
         damageSound.setLooping(false);
         damageSound.setVolume(.75f);
-        damageSound.setPitch(1.25f);
         rootNode.attachChild(damageSound);
-
 
         crosshair = new Picture("Crosshair");
         crosshair.setImage(assetManager, "Textures/crosshair.png", true);
@@ -110,6 +117,12 @@ public class Main extends SimpleApplication {
         inputManager.addMapping("Disparar", new KeyTrigger(KeyInput.KEY_SPACE));
         inputManager.addListener(actionListener, "Disparar");
 
+        inputManager.addMapping("Camara1", new KeyTrigger(KeyInput.KEY_1));
+        inputManager.addMapping("Camara2", new KeyTrigger(KeyInput.KEY_2));
+        inputManager.addMapping("Camara3", new KeyTrigger(KeyInput.KEY_3));
+
+        inputManager.addListener(actionListener, "Camara1", "Camara2", "Camara3");
+
         bulletNode = new Node("bulletNode");
         rootNode.attachChild(bulletNode);
 
@@ -120,7 +133,7 @@ public class Main extends SimpleApplication {
         deathCountText = new BitmapText(guiFont, false);
         deathCountText.setSize(guiFont.getCharSet().getRenderedSize());
         deathCountText.setColor(ColorRGBA.Yellow); // Color del texto
-        deathCountText.setText("Enemigos: 0");
+        deathCountText.setText("Enemigos derrotados: 0");
         deathCountText.setLocalTranslation(10, settings.getHeight() - 10, 0); // Posición del texto en la pantalla
         guiNode.attachChild(deathCountText);
 
@@ -128,8 +141,22 @@ public class Main extends SimpleApplication {
         vidaText.setSize(guiFont.getCharSet().getRenderedSize());
         vidaText.setColor(ColorRGBA.Green); // Color del texto
         vidaText.setText("Vida de la Torre: " + vidaTorre); // Texto inicial
-        vidaText.setLocalTranslation(settings.getWidth()-180, settings.getHeight() - 10, 0); // Posición del texto en la pantalla
+        vidaText.setLocalTranslation(settings.getWidth() - 180, settings.getHeight() - 10, 0); // Posición del texto en la pantalla
         guiNode.attachChild(vidaText);
+
+        BitmapText instructionsText = new BitmapText(guiFont, false);
+        instructionsText.setSize(guiFont.getCharSet().getRenderedSize());
+        instructionsText.setColor(ColorRGBA.White); // Color del texto
+        instructionsText.setText("""
+                                 Controles:
+                                 Disparar: Barra espaciadora
+                                 Cambiar c\u00e1mara:
+                                    - Camara 1: Tecla 1
+                                    - Camara 2: Tecla 2
+                                    - Camara 3: Tecla 3"""); // Texto de las instrucciones
+        instructionsText.setLocalTranslation(10, 150, 0); // Posición del texto en la pantalla
+        guiNode.attachChild(instructionsText);
+
     }
 
     private void initScene() {
@@ -139,10 +166,6 @@ public class Main extends SimpleApplication {
         music.setVolume(0.7f);
         rootNode.attachChild(music);
         music.play();
-
-        cam.setLocation(new Vector3f(-3.5f, 4f, 9f)); // Establece la posición de la cámara
-        cam.lookAt(new Vector3f(2, 0, 40), Vector3f.UNIT_Y);
-
         // Creamos el suelo del escenario
         Spatial ground = assetManager.loadModel("Models/escenario.j3o");
         Spatial ground2 = assetManager.loadModel("Models/escenario.j3o");
@@ -314,6 +337,13 @@ public class Main extends SimpleApplication {
             spawnEnemy();
             spawnTimer = 0f;
         }
+        if (isGameOver) {
+            pauseTimer += tpf;
+            if (pauseTimer >= 3f) { // Espera 3 segundos antes de detener el juego
+                stop();
+            }
+            return; // Salir del método simpleUpdate para detener la actualización del juego
+        }
 
         // Llama al método handleCollisions() para verificar las colisiones
         handleCollisions();
@@ -338,6 +368,24 @@ public class Main extends SimpleApplication {
         public void onAction(String name, boolean keyPressed, float tpf) {
             if (name.equals("Disparar") && !keyPressed) {
                 disparar();
+            }
+            if (keyPressed) {
+                switch (name) {
+                    case "Camara1":
+                        cam.setLocation(new Vector3f(-3.5f, 4f, 9f));
+                        cam.lookAt(new Vector3f(2, 0, 40), Vector3f.UNIT_Y);
+                        break;
+                    case "Camara2":
+                        cam.setLocation(new Vector3f(5f, 4f, 4f));
+                        cam.lookAt(new Vector3f(2, 0, 40), Vector3f.UNIT_Y);
+                        break;
+                    case "Camara3":
+                        cam.setLocation(new Vector3f(-3f, 4f, 2f));
+                        cam.lookAt(new Vector3f(2, 0, 40), Vector3f.UNIT_Y);
+                        break;
+                    default:
+                        break;
+                }
             }
         }
     };
@@ -370,9 +418,12 @@ public class Main extends SimpleApplication {
                 damageSound.playInstance(); // Reproducir el sonido de muerte
                 vidaText.setText("Vida de la Torre: " + vidaTorre); // Actualizamos el texto de la vida de la torre en pantalla
                 switch (vidaTorre) {
-                    case 7 -> vidaText.setColor(ColorRGBA.Yellow);
-                    case 5 -> vidaText.setColor(ColorRGBA.Orange);
-                    case 3 -> vidaText.setColor(ColorRGBA.Red);
+                    case 7 ->
+                        vidaText.setColor(ColorRGBA.Yellow);
+                    case 5 ->
+                        vidaText.setColor(ColorRGBA.Orange);
+                    case 3 ->
+                        vidaText.setColor(ColorRGBA.Red);
                     default -> {
                     }
                 }
@@ -410,10 +461,17 @@ public class Main extends SimpleApplication {
     }
 
     private void gameOver() {
-        // Lógica para mostrar el mensaje de Game Over y detener el juego
-        System.out.println("Game Over");
-        // Por ejemplo, puedes mostrar un mensaje en la consola y cerrar la aplicación
-        stop(); // Detiene la aplicación
+        // Muestra el mensaje de Game Over
+        BitmapText gameOverText = new BitmapText(guiFont, false);
+        gameOverText.setSize(guiFont.getCharSet().getRenderedSize() * 4);
+        gameOverText.setColor(ColorRGBA.Red); // Color del texto
+        gameOverText.setText("¡Game Over!"); // Texto a mostrar
+        gameOverText.setLocalTranslation(settings.getWidth() / 2f - gameOverText.getLineWidth() / 2f, settings.getHeight() / 2f, 0); // Posición del texto en la pantalla
+        guiNode.attachChild(gameOverText);
+
+        // Iniciar el temporizador de pausa
+        pauseTimer = 0f;
+        isGameOver = true;
     }
 
     private void disparar() {
