@@ -7,11 +7,12 @@ import com.jme3.font.BitmapText;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
-import com.jme3.light.DirectionalLight;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Vector3f;
+import com.jme3.post.FilterPostProcessor;
+import com.jme3.post.filters.FogFilter;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
@@ -25,7 +26,7 @@ public class Main extends SimpleApplication {
     private Node enemyNode;
     private Node targetNode;
     private float spawnTimer = 0f;
-    private float spawnInterval = 3f;
+    private float spawnInterval = .1f;
 
     private int vidaTorre = 10; // Vida inicial de la torre
     private Spatial model;
@@ -74,6 +75,13 @@ public class Main extends SimpleApplication {
         initScene();
         enemyNode = new Node("enemyNode");
         rootNode.attachChild(enemyNode);
+        
+        FilterPostProcessor fpp = new FilterPostProcessor(assetManager);
+
+        // Cambiar el color de fondo de la escena
+        viewPort.setBackgroundColor(ColorRGBA.fromRGBA255(1, 0, 2, 255));
+
+        viewPort.addProcessor(fpp);
 
         targetNode = new Node("targetNode");
         targetNode.setLocalTranslation(0, -.3f, -5);
@@ -99,6 +107,7 @@ public class Main extends SimpleApplication {
         damageSound.setPositional(false);
         damageSound.setLooping(false);
         damageSound.setVolume(.75f);
+        damageSound.setPitch(.75f);
         rootNode.attachChild(damageSound);
 
         crosshair = new Picture("Crosshair");
@@ -160,6 +169,7 @@ public class Main extends SimpleApplication {
     }
 
     private void initScene() {
+
         AudioNode music = new AudioNode(assetManager, "Sounds/musica.wav", true);
         music.setPositional(false);
         music.setLooping(true);
@@ -209,10 +219,6 @@ public class Main extends SimpleApplication {
         torredark.rotate(0, 0, 0);
         torredark.setLocalTranslation(0, .5f, 25); // Posicionamos la torre
         rootNode.attachChild(torredark);
-
-        DirectionalLight sun = new DirectionalLight();
-        sun.setDirection(new Vector3f(-0.1f, -0.7f, -1.0f).normalizeLocal());
-        rootNode.addLight(sun);
 
         //Flowers
         // Array de posiciones de las flores
