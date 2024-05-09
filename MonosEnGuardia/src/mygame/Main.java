@@ -12,7 +12,6 @@ import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Vector3f;
 import com.jme3.post.FilterPostProcessor;
-import com.jme3.post.filters.FogFilter;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
@@ -26,7 +25,7 @@ public class Main extends SimpleApplication {
     private Node enemyNode;
     private Node targetNode;
     private float spawnTimer = 0f;
-    private float spawnInterval = .1f;
+    private float spawnInterval = 3f;
 
     private int vidaTorre = 10; // Vida inicial de la torre
     private Spatial model;
@@ -59,6 +58,7 @@ public class Main extends SimpleApplication {
 
         Main app = new Main();
         app.setSettings(settings);
+        
         app.start();
     }
 
@@ -447,22 +447,28 @@ public class Main extends SimpleApplication {
             spawnInterval = 2f;
         }
         if (deadEnemies > 30) {
-            spawnInterval = 1.5f;
+            spawnInterval = 1.75f;
         }
         if (deadEnemies > 40) {
-            spawnInterval = 1.25f;
+            spawnInterval = 1.5f;
         }
         if (deadEnemies > 50) {
-            spawnInterval = 1f;
+            spawnInterval = 1.25f;
         }
         if (deadEnemies > 60) {
+            spawnInterval = 1f;
+        }
+        if (deadEnemies > 80) {
             spawnInterval = .75f;
         }
-        if (deadEnemies > 90) {
+        if (deadEnemies > 120) {
             spawnInterval = .5f;
         }
         if (deadEnemies > 150) {
             spawnInterval = .25f;
+        }
+        if (deadEnemies > 200) {
+            spawnInterval = .15f;
         }
     }
 
