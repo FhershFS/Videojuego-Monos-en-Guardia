@@ -5,8 +5,10 @@ import com.jme3.audio.AudioNode;
 import com.jme3.bullet.BulletAppState;
 import com.jme3.font.BitmapText;
 import com.jme3.input.KeyInput;
+import com.jme3.input.MouseInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
+import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
@@ -25,7 +27,8 @@ public class Main extends SimpleApplication {
     private Node enemyNode;
     private Node targetNode;
     private float spawnTimer = 0f;
-    private float spawnInterval = 3f;
+    private float spawnInterval = 0.150f;
+    private float jumpPhase = 0f;
 
     private int vidaTorre = 10; // Vida inicial de la torre
     private Spatial model;
@@ -51,6 +54,7 @@ public class Main extends SimpleApplication {
         settings.setTitle("Monos en Guardia");
         settings.setSettingsDialogImage("Interface/INICIO.png");
         settings.setFullscreen(true);
+        settings.setResolution(1024, 768);
         settings.setFrameRate(60); // Establece el framerate deseado
         settings.setVSync(true); // Activa el VSync para evitar el tearing
         settings.setSamples(4); // Activa el anti-aliasing (si es compatible con tu hardware)
@@ -69,8 +73,8 @@ public class Main extends SimpleApplication {
         cam.setLocation(new Vector3f(-3.5f, 4f, 9f));
         cam.lookAt(new Vector3f(2, 0, 40), Vector3f.UNIT_Y);
 
-        flyCam.setMoveSpeed(0); // Deshabilitar el movimiento con las teclas
-        flyCam.setZoomSpeed(0); // Deshabilitar el zoom con las teclas
+        flyCam.setMoveSpeed(10); // Deshabilitar el movimiento con las teclas
+        flyCam.setZoomSpeed(10); // Deshabilitar el zoom con las teclas
 
         initScene();
         enemyNode = new Node("enemyNode");
@@ -79,7 +83,7 @@ public class Main extends SimpleApplication {
         FilterPostProcessor fpp = new FilterPostProcessor(assetManager);
 
         // Cambiar el color de fondo de la escena
-        viewPort.setBackgroundColor(ColorRGBA.fromRGBA255(1, 0, 2, 255));
+        viewPort.setBackgroundColor(ColorRGBA.fromRGBA255(1, 0, 5, 255));
 
         viewPort.addProcessor(fpp);
 
@@ -124,6 +128,7 @@ public class Main extends SimpleApplication {
         guiNode.attachChild(crosshair);
 
         inputManager.addMapping("Disparar", new KeyTrigger(KeyInput.KEY_SPACE));
+        inputManager.addMapping("Disparar", new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
         inputManager.addListener(actionListener, "Disparar");
 
         inputManager.addMapping("Camara1", new KeyTrigger(KeyInput.KEY_1));
@@ -158,7 +163,7 @@ public class Main extends SimpleApplication {
         instructionsText.setColor(ColorRGBA.White); // Color del texto
         instructionsText.setText("""
                                  Controles:
-                                 Disparar: Barra espaciadora
+                                 Disparar: Barra espaciadora y click izq
                                  Cambiar c\u00e1mara:
                                     - Camara 1: Tecla 1
                                     - Camara 2: Tecla 2
@@ -337,37 +342,47 @@ public class Main extends SimpleApplication {
     }
 
     @Override
-    public void simpleUpdate(float tpf) {
-        spawnTimer += tpf;
-        if (spawnTimer >= spawnInterval) {
-            spawnEnemy();
-            spawnTimer = 0f;
+public void simpleUpdate(float tpf) {
+    spawnTimer += tpf;
+    if (spawnTimer >= spawnInterval) {
+        spawnEnemy();
+        spawnTimer = 0f;
+    }
+    if (isGameOver) {
+        pauseTimer += tpf;
+        if (pauseTimer >= 3f) { // Espera 3 segundos antes de detener el juego
+            stop();
         }
-        if (isGameOver) {
-            pauseTimer += tpf;
-            if (pauseTimer >= 3f) { // Espera 3 segundos antes de detener el juego
-                stop();
-            }
-            return; // Salir del método simpleUpdate para detener la actualización del juego
-        }
+        return; // Salir del método simpleUpdate para detener la actualización del juego
+    }
 
-        // Llama al método handleCollisions() para verificar las colisiones
-        handleCollisions();
+    // Llama al método handleCollisions() para verificar las colisiones
+    handleCollisions();
 
-        for (Spatial enemy : enemyNode.getChildren()) {
-            Vector3f enemyPos = enemy.getWorldTranslation();
-            Vector3f targetPos = targetNode.getWorldTranslation();
-            Vector3f direction = targetPos.subtract(enemyPos).normalizeLocal();
-            float distance = enemyPos.distance(targetPos);
+    jumpPhase += tpf; // Incrementar la fase del salto
 
-            if (distance > 1f) {
-                Vector3f interpolatedPos = enemyPos.add(direction.mult(tpf * 2f));
-                enemy.setLocalTranslation(interpolatedPos);
-            } else {
-                enemy.move(direction.mult(tpf * 2f));
-            }
+    for (Spatial enemy : enemyNode.getChildren()) {
+        Vector3f enemyPos = enemy.getWorldTranslation();
+        Vector3f targetPos = targetNode.getWorldTranslation();
+        Vector3f direction = targetPos.subtract(enemyPos).normalizeLocal();
+        float distance = enemyPos.distance(targetPos);
+
+        if (distance > 1f) {
+            Vector3f interpolatedPos = enemyPos.add(direction.mult(tpf * 2f));
+
+            // Aplicar el movimiento de salto usando una onda sinusoidal
+            float jumpHeight = 0.05f; // Altura del salto
+            float jumpSpeed = 10f; // Velocidad del salto
+            float verticalOffset = FastMath.sin(jumpPhase * jumpSpeed) * jumpHeight;
+
+            interpolatedPos.y += verticalOffset; // Aplicar la componente vertical del salto
+            enemy.setLocalTranslation(interpolatedPos);
+        } else {
+            enemy.move(direction.mult(tpf * 2f));
         }
     }
+}
+
 
     private final ActionListener actionListener = new ActionListener() {
         @Override
