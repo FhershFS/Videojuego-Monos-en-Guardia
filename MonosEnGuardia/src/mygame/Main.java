@@ -9,38 +9,45 @@ import com.jme3.input.MouseInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.input.controls.MouseButtonTrigger;
-import com.jme3.material.Material;
-import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
-import com.jme3.math.Vector3f;
 import com.jme3.post.FilterPostProcessor;
 import com.jme3.renderer.RenderManager;
-import com.jme3.scene.Node;
-import com.jme3.scene.Spatial;
 import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
 import com.jme3.ui.Picture;
 import java.util.Iterator;
+import com.jme3.scene.Node;
+import com.jme3.material.Material;
+import com.jme3.math.ColorRGBA;
+import com.jme3.math.Vector3f;
+import com.jme3.scene.Geometry;
+import com.jme3.scene.Spatial;
+import com.jme3.scene.shape.Sphere;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class Main extends SimpleApplication {
 
     private Node enemyNode;
     private Node targetNode;
     private float spawnTimer = 0f;
-    private float spawnInterval = 0.150f;
+    private float spawnInterval = .10f;
     private float jumpPhase = 0f;
 
     private int vidaTorre = 10; // Vida inicial de la torre
     private Spatial model;
 
-    private int deadEnemies = 0;
+    int deadEnemies = 0;
     private Node bananaNode;
     private BitmapText deathCountText;
     private BitmapText vidaText;
 
-    private int deathCount = 0;
+    int deathCount = 0;
     private AudioNode shootingSound;
     private AudioNode damageSound;
+    private AudioNode explosionSound;
+    private AudioNode gameSound;
+    private AudioNode loadSound;
     private Picture crosshair;
     private Node bulletNode;
     private BulletAppState bulletAppState;
@@ -48,6 +55,9 @@ public class Main extends SimpleApplication {
 
     private float pauseTimer = 0f;
     private boolean isGameOver = false;
+    private float explosiveCooldown = 15f; // Cooldown de 20 segundos
+    private float explosiveTimer = 0f;
+    private boolean canShootExplosive = true;
 
     public static void main(String[] args) {
         AppSettings settings = new AppSettings(true);
@@ -62,7 +72,7 @@ public class Main extends SimpleApplication {
 
         Main app = new Main();
         app.setSettings(settings);
-        
+
         app.start();
     }
 
@@ -79,7 +89,7 @@ public class Main extends SimpleApplication {
         initScene();
         enemyNode = new Node("enemyNode");
         rootNode.attachChild(enemyNode);
-        
+
         FilterPostProcessor fpp = new FilterPostProcessor(assetManager);
 
         // Cambiar el color de fondo de la escena
@@ -100,12 +110,24 @@ public class Main extends SimpleApplication {
         shootingSound.setVolume(0.25f);
         rootNode.attachChild(shootingSound);
 
+        explosionSound = new AudioNode(assetManager, "Sounds/explosion.wav", false);
+        explosionSound.setPositional(false);
+        explosionSound.setLooping(false);
+        explosionSound.setPitch(0.5f);
+        rootNode.attachChild(explosionSound);
+
         deadSound = new AudioNode(assetManager, "Sounds/dead.wav", false);
         deadSound.setPositional(false);
         deadSound.setLooping(false);
         deadSound.setVolume(1f);
         deadSound.setPitch(.5f);
         rootNode.attachChild(deadSound);
+        
+        loadSound = new AudioNode(assetManager, "Sounds/load.wav", false);
+        loadSound.setPositional(false);
+        loadSound.setLooping(false);
+        loadSound.setVolume(2f);
+        rootNode.attachChild(loadSound);
 
         damageSound = new AudioNode(assetManager, "Sounds/damage.wav", false);
         damageSound.setPositional(false);
@@ -113,6 +135,12 @@ public class Main extends SimpleApplication {
         damageSound.setVolume(.75f);
         damageSound.setPitch(.75f);
         rootNode.attachChild(damageSound);
+        
+        gameSound = new AudioNode(assetManager, "Sounds/gameover.wav", false);
+        gameSound.setPositional(false);
+        gameSound.setLooping(false);
+        gameSound.setVolume(2f);
+        rootNode.attachChild(gameSound);
 
         crosshair = new Picture("Crosshair");
         crosshair.setImage(assetManager, "Textures/crosshair.png", true);
@@ -127,7 +155,7 @@ public class Main extends SimpleApplication {
         crosshair.setPosition(crosshairPosX, crosshairPosY);
         guiNode.attachChild(crosshair);
 
-        inputManager.addMapping("Disparar", new KeyTrigger(KeyInput.KEY_SPACE));
+
         inputManager.addMapping("Disparar", new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
         inputManager.addListener(actionListener, "Disparar");
 
@@ -163,13 +191,17 @@ public class Main extends SimpleApplication {
         instructionsText.setColor(ColorRGBA.White); // Color del texto
         instructionsText.setText("""
                                  Controles:
-                                 Disparar: Barra espaciadora y click izq
+                                 Disparar: Click Izquierdo
+                                 Bomba: Click Derecho
                                  Cambiar c\u00e1mara:
                                     - Camara 1: Tecla 1
                                     - Camara 2: Tecla 2
                                     - Camara 3: Tecla 3"""); // Texto de las instrucciones
         instructionsText.setLocalTranslation(10, 150, 0); // Posición del texto en la pantalla
         guiNode.attachChild(instructionsText);
+
+        inputManager.addMapping("DispararExplosivo", new MouseButtonTrigger(MouseInput.BUTTON_RIGHT));
+        inputManager.addListener(actionListener, "DispararExplosivo");
 
     }
 
@@ -342,53 +374,66 @@ public class Main extends SimpleApplication {
     }
 
     @Override
-public void simpleUpdate(float tpf) {
-    spawnTimer += tpf;
-    if (spawnTimer >= spawnInterval) {
-        spawnEnemy();
-        spawnTimer = 0f;
-    }
-    if (isGameOver) {
-        pauseTimer += tpf;
-        if (pauseTimer >= 3f) { // Espera 3 segundos antes de detener el juego
-            stop();
+    public void simpleUpdate(float tpf) {
+        spawnTimer += tpf;
+        if (spawnTimer >= spawnInterval) {
+            spawnEnemy();
+            spawnTimer = 0f;
         }
-        return; // Salir del método simpleUpdate para detener la actualización del juego
-    }
+        if (isGameOver) {
+            pauseTimer += tpf;
+            if (pauseTimer >= 3f) { // Espera 3 segundos antes de detener el juego
+                stop();
+            }
+            return; // Salir del método simpleUpdate para detener la actualización del juego
+        }
 
-    // Llama al método handleCollisions() para verificar las colisiones
-    handleCollisions();
+        // Llama al método handleCollisions() para verificar las colisiones
+        handleCollisions();
 
-    jumpPhase += tpf; // Incrementar la fase del salto
+        jumpPhase += tpf; // Incrementar la fase del salto
 
-    for (Spatial enemy : enemyNode.getChildren()) {
-        Vector3f enemyPos = enemy.getWorldTranslation();
-        Vector3f targetPos = targetNode.getWorldTranslation();
-        Vector3f direction = targetPos.subtract(enemyPos).normalizeLocal();
-        float distance = enemyPos.distance(targetPos);
+        for (Spatial enemy : enemyNode.getChildren()) {
+            Vector3f enemyPos = enemy.getWorldTranslation();
+            Vector3f targetPos = targetNode.getWorldTranslation();
+            Vector3f direction = targetPos.subtract(enemyPos).normalizeLocal();
+            float distance = enemyPos.distance(targetPos);
 
-        if (distance > 1f) {
-            Vector3f interpolatedPos = enemyPos.add(direction.mult(tpf * 2f));
+            if (distance > 1f) {
+                Vector3f interpolatedPos = enemyPos.add(direction.mult(tpf * 2f));
 
-            // Aplicar el movimiento de salto usando una onda sinusoidal
-            float jumpHeight = 0.05f; // Altura del salto
-            float jumpSpeed = 10f; // Velocidad del salto
-            float verticalOffset = FastMath.sin(jumpPhase * jumpSpeed) * jumpHeight;
+                // Aplicar el movimiento de salto usando una onda sinusoidal
+                float jumpHeight = 0.025f; // Altura del salto
+                float jumpSpeed = 10f; // Velocidad del salto
+                float verticalOffset = FastMath.sin(jumpPhase * jumpSpeed) * jumpHeight;
 
-            interpolatedPos.y += verticalOffset; // Aplicar la componente vertical del salto
-            enemy.setLocalTranslation(interpolatedPos);
-        } else {
-            enemy.move(direction.mult(tpf * 2f));
+                interpolatedPos.y += verticalOffset; // Aplicar la componente vertical del salto
+                enemy.setLocalTranslation(interpolatedPos);
+            } else {
+                enemy.move(direction.mult(tpf * 2f));
+            }
+        }
+        if (!canShootExplosive) {
+        explosiveTimer += tpf;
+        if (explosiveTimer >= explosiveCooldown) {
+            canShootExplosive = true;
+            explosiveTimer = 0f;
+        }
         }
     }
-}
-
 
     private final ActionListener actionListener = new ActionListener() {
-        @Override
-        public void onAction(String name, boolean keyPressed, float tpf) {
+    @Override
+    public void onAction(String name, boolean keyPressed, float tpf) {
+        enqueue(() -> {
             if (name.equals("Disparar") && !keyPressed) {
                 disparar();
+            } else if (name.equals("DispararExplosivo") && !keyPressed) {
+                dispararExplosivo();
+            }
+              if (name.equals("DispararExplosivo") && !keyPressed && canShootExplosive) {
+                dispararExplosivo();
+                canShootExplosive = false; // Desactiva la capacidad de disparar explosivos hasta que termine el cooldown
             }
             if (keyPressed) {
                 switch (name) {
@@ -408,27 +453,38 @@ public void simpleUpdate(float tpf) {
                         break;
                 }
             }
-        }
-    };
+        });
+    }
+};
+
 
     private void handleCollisions() {
         // Detección de colisión entre balas y enemigos
-        for (Iterator<Spatial> bulletIterator = bulletNode.getChildren().iterator(); bulletIterator.hasNext();) {
-            Spatial bullet = bulletIterator.next();
-            for (Iterator<Spatial> enemyIterator = enemyNode.getChildren().iterator(); enemyIterator.hasNext();) {
-                Spatial enemy = enemyIterator.next();
-                if (bullet.getWorldBound().intersects(enemy.getWorldBound())) {
+         for (Iterator<Spatial> bulletIterator = bulletNode.getChildren().iterator(); bulletIterator.hasNext();) {
+        Spatial bullet = bulletIterator.next();
+        for (Iterator<Spatial> enemyIterator = enemyNode.getChildren().iterator(); enemyIterator.hasNext();) {
+            Spatial enemy = enemyIterator.next();
+            if (bullet.getWorldBound().intersects(enemy.getWorldBound())) {
+                if (bullet.getName().equals("explosion")) {
+                    // Crea una explosión en la posición del enemigo
+                    crearExplosion(enemy.getWorldTranslation());
+                    // Elimina el enemigo
+                    enemy.removeFromParent();
+                    deadEnemies++;
+                    deadSound.playInstance();
+                    deathCount++;
+                    deathCountText.setText("Enemigos derrotados: " + deathCount);
+                } else {
                     enemy.removeFromParent();
                     bullet.removeFromParent();
                     deadEnemies++;
-                    deadSound.playInstance(); // Reproducir el sonido de muerte
-
-                    // Incrementar el contador de muertes y actualizar el texto
+                    deadSound.playInstance();
                     deathCount++;
                     deathCountText.setText("Enemigos derrotados: " + deathCount);
                 }
             }
         }
+    }
 
         // Detección de colisión entre enemigos y la torre
         for (Iterator<Spatial> enemyIterator = enemyNode.getChildren().iterator(); enemyIterator.hasNext();) {
@@ -499,6 +555,8 @@ public void simpleUpdate(float tpf) {
         // Iniciar el temporizador de pausa
         pauseTimer = 0f;
         isGameOver = true;
+        
+        gameSound.playInstance();
     }
 
     private void disparar() {
@@ -515,6 +573,70 @@ public void simpleUpdate(float tpf) {
         bullet.addControl(new BulletControl(direction));
         shootingSound.playInstance();
     }
+
+    private void dispararExplosivo() {
+        if (!canShootExplosive) {
+            loadSound.playInstance();
+            return;
+        }
+
+        // Crear la esfera explosiva
+        Sphere bullet = new Sphere(10, 10, .25f);
+        Geometry bulletGeometry = new Geometry("explosion", bullet);
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mat.setColor("Color", ColorRGBA.Red);
+        bulletGeometry.setMaterial(mat);
+        Vector3f startPosition = cam.getLocation();
+        bulletGeometry.setLocalTranslation(startPosition);
+        Vector3f direction = cam.getDirection();
+        bulletNode.attachChild(bulletGeometry);
+        bulletAppState.getPhysicsSpace().add(bulletGeometry);
+        bulletGeometry.addControl(new BulletControl(direction));
+        shootingSound.playInstance();
+    }
+    
+      private void crearExplosion(Vector3f posicion) {
+        Sphere explosionSphere = new Sphere(30, 30, 3f); // Ajusta el radio de la esfera de explosión según tus necesidades
+        Geometry explosionGeometry = new Geometry("explosion", explosionSphere);
+        Material explosionMaterial = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        explosionMaterial.setColor("Color", ColorRGBA.Yellow);
+        explosionGeometry.setMaterial(explosionMaterial);
+        explosionGeometry.setLocalTranslation(posicion);
+        rootNode.attachChild(explosionGeometry);
+        explosionSound.playInstance(); // Reproduce el sonido de la explosión
+
+        // Elimina todos los enemigos dentro del área de la explosión
+        for (Iterator<Spatial> enemyIterator = enemyNode.getChildren().iterator(); enemyIterator.hasNext();) {
+            Spatial enemy = enemyIterator.next();
+            if (enemy.getWorldTranslation().distance(posicion) < 4f) { // Ajusta el radio del área de explosión según tus necesidades
+                enemy.removeFromParent();
+                deadEnemies++;
+                deathCount++;
+                deathCountText.setText("Enemigos derrotados: " + deathCount);
+            }
+        }
+
+        // Programa la eliminación de la esfera de explosión después de un cierto tiempo
+        Timer timer = new Timer();
+        timer.schedule(new ExplosionTimerTask(explosionGeometry), 50); // Ajusta el tiempo de vida útil de la esfera de explosión (en milisegundos)
+    }
+
+    // Clase interna para la tarea de temporizador de la explosión
+    class ExplosionTimerTask extends TimerTask {
+        private final Geometry explosionGeometry;
+
+        public ExplosionTimerTask(Geometry explosionGeometry) {
+            this.explosionGeometry = explosionGeometry;
+        }
+
+        @Override
+        public void run() {
+            // Elimina la esfera de explosión
+            explosionGeometry.removeFromParent();
+        }
+    }
+
+   
 
     @Override
     public void simpleRender(RenderManager rm) {
