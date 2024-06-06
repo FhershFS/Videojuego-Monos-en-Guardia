@@ -56,6 +56,8 @@ public class Main extends SimpleApplication {
     private float pauseTimer = 0f;
     private boolean isGameOver = false;
     private float explosiveCooldown = 15f; // Cooldown de 20 segundos
+    private float cooldownTime = 0f; // Tiempo restante del cooldown
+    private BitmapText cooldownText; // Texto para mostrar el cooldown
     private float explosiveTimer = 0f;
     private boolean canShootExplosive = true;
 
@@ -139,7 +141,7 @@ public class Main extends SimpleApplication {
         gameSound = new AudioNode(assetManager, "Sounds/gameover.wav", false);
         gameSound.setPositional(false);
         gameSound.setLooping(false);
-        gameSound.setVolume(2f);
+        gameSound.setVolume(1.5f);
         rootNode.attachChild(gameSound);
 
         crosshair = new Picture("Crosshair");
@@ -202,7 +204,15 @@ public class Main extends SimpleApplication {
 
         inputManager.addMapping("DispararExplosivo", new MouseButtonTrigger(MouseInput.BUTTON_RIGHT));
         inputManager.addListener(actionListener, "DispararExplosivo");
-
+        
+        // Inicializar el texto del cooldown
+        cooldownText = new BitmapText(guiFont, false);
+        cooldownText.setSize(guiFont.getCharSet().getRenderedSize());
+        cooldownText.setColor(ColorRGBA.Red); // Color del texto
+        cooldownText.setText(""); // Inicialmente vacío
+        cooldownText.setSize(30);
+        cooldownText.setLocalTranslation(settings.getWidth() / 2f, settings.getHeight() / 2f, 0); // Posición del texto en la pantalla
+        guiNode.attachChild(cooldownText);
     }
 
     private void initScene() {
@@ -210,7 +220,7 @@ public class Main extends SimpleApplication {
         AudioNode music = new AudioNode(assetManager, "Sounds/musica.wav", true);
         music.setPositional(false);
         music.setLooping(true);
-        music.setVolume(0.7f);
+        music.setVolume(0.5f);
         rootNode.attachChild(music);
         music.play();
         // Creamos el suelo del escenario
@@ -413,13 +423,19 @@ public class Main extends SimpleApplication {
                 enemy.move(direction.mult(tpf * 2f));
             }
         }
-        if (!canShootExplosive) {
-        explosiveTimer += tpf;
-        if (explosiveTimer >= explosiveCooldown) {
-            canShootExplosive = true;
-            explosiveTimer = 0f;
+          if (!canShootExplosive) {
+        cooldownTime -= tpf; // Reducir el tiempo restante del cooldown
+        if (cooldownTime <= 0) {
+            cooldownTime = 0; // Asegurar que el tiempo no sea negativo
+            canShootExplosive = true; // Restablecer la capacidad de disparar explosivos
         }
-        }
+    } else {
+        // Si puede disparar explosivos, restablecer el tiempo de cooldown
+        cooldownTime = explosiveCooldown;
+    }
+
+    // Actualizar el texto del cooldown en pantalla
+    cooldownText.setText("" + String.format("%.1f", cooldownTime));
     }
 
     private final ActionListener actionListener = new ActionListener() {
@@ -584,7 +600,7 @@ public class Main extends SimpleApplication {
         Sphere bullet = new Sphere(10, 10, .25f);
         Geometry bulletGeometry = new Geometry("explosion", bullet);
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat.setColor("Color", ColorRGBA.Red);
+        mat.setColor("Color", ColorRGBA.BlackNoAlpha);
         bulletGeometry.setMaterial(mat);
         Vector3f startPosition = cam.getLocation();
         bulletGeometry.setLocalTranslation(startPosition);
