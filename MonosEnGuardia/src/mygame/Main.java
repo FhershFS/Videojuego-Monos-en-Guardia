@@ -31,7 +31,7 @@ public class Main extends SimpleApplication {
     private Node enemyNode;
     private Node targetNode;
     private float spawnTimer = 0f;
-    private float spawnInterval = .10f;
+    private float spawnInterval = 3f;
     private float jumpPhase = 0f;
 
     private int vidaTorre = 10; // Vida inicial de la torre
@@ -55,7 +55,7 @@ public class Main extends SimpleApplication {
 
     private float pauseTimer = 0f;
     private boolean isGameOver = false;
-    private float explosiveCooldown = 15f; // Cooldown de 20 segundos
+    private float explosiveCooldown = 20f; // Cooldown de 20 segundos
     private float cooldownTime = 0f; // Tiempo restante del cooldown
     private BitmapText cooldownText; // Texto para mostrar el cooldown
     private float explosiveTimer = 0f;
@@ -85,8 +85,8 @@ public class Main extends SimpleApplication {
         cam.setLocation(new Vector3f(-3.5f, 4f, 9f));
         cam.lookAt(new Vector3f(2, 0, 40), Vector3f.UNIT_Y);
 
-        flyCam.setMoveSpeed(10); // Deshabilitar el movimiento con las teclas
-        flyCam.setZoomSpeed(10); // Deshabilitar el zoom con las teclas
+        flyCam.setMoveSpeed(0); // Deshabilitar el movimiento con las teclas
+        flyCam.setZoomSpeed(0); // Deshabilitar el zoom con las teclas
 
         initScene();
         enemyNode = new Node("enemyNode");
@@ -211,7 +211,7 @@ public class Main extends SimpleApplication {
         cooldownText.setColor(ColorRGBA.Red); // Color del texto
         cooldownText.setText(""); // Inicialmente vacío
         cooldownText.setSize(30);
-        cooldownText.setLocalTranslation(settings.getWidth() / 2f, settings.getHeight() / 2f, 0); // Posición del texto en la pantalla
+        cooldownText.setLocalTranslation(settings.getWidth() / 2.5f, settings.getHeight() / 2f, 0); // Posición del texto en la pantalla
         guiNode.attachChild(cooldownText);
     }
 
@@ -541,6 +541,7 @@ public class Main extends SimpleApplication {
         }
         if (deadEnemies > 50) {
             spawnInterval = 1.25f;
+            explosiveCooldown = 15f;            
         }
         if (deadEnemies > 60) {
             spawnInterval = 1f;
@@ -550,12 +551,18 @@ public class Main extends SimpleApplication {
         }
         if (deadEnemies > 120) {
             spawnInterval = .5f;
+            explosiveCooldown = 12f; 
         }
         if (deadEnemies > 150) {
             spawnInterval = .25f;
         }
         if (deadEnemies > 200) {
             spawnInterval = .15f;
+            explosiveCooldown = 10f; 
+        }
+        if (deadEnemies > 250) {
+            spawnInterval = .10f;
+            explosiveCooldown = 5f; 
         }
     }
 
@@ -587,6 +594,7 @@ public class Main extends SimpleApplication {
         bulletNode.attachChild(bullet);
         bulletAppState.getPhysicsSpace().add(bullet);
         bullet.addControl(new BulletControl(direction));
+        shootingSound.setPitch(1f);
         shootingSound.playInstance();
     }
 
@@ -597,10 +605,11 @@ public class Main extends SimpleApplication {
         }
 
         // Crear la esfera explosiva
+        shootingSound.setPitch(.75f);
         Sphere bullet = new Sphere(10, 10, .25f);
         Geometry bulletGeometry = new Geometry("explosion", bullet);
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat.setColor("Color", ColorRGBA.BlackNoAlpha);
+        mat.setColor("Color", ColorRGBA.Orange);
         bulletGeometry.setMaterial(mat);
         Vector3f startPosition = cam.getLocation();
         bulletGeometry.setLocalTranslation(startPosition);
@@ -608,7 +617,8 @@ public class Main extends SimpleApplication {
         bulletNode.attachChild(bulletGeometry);
         bulletAppState.getPhysicsSpace().add(bulletGeometry);
         bulletGeometry.addControl(new BulletControl(direction));
-        shootingSound.playInstance();
+ 
+        shootingSound.playInstance();    
     }
     
       private void crearExplosion(Vector3f posicion) {
