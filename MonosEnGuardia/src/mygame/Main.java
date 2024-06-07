@@ -31,7 +31,7 @@ public class Main extends SimpleApplication {
     private Node enemyNode;
     private Node targetNode;
     private float spawnTimer = 0f;
-    private float spawnInterval = 3f;
+    private float spawnInterval = 1.0f;
     private float jumpPhase = 0f;
 
     private int vidaTorre = 10; // Vida inicial de la torre
@@ -64,7 +64,7 @@ public class Main extends SimpleApplication {
     public static void main(String[] args) {
         AppSettings settings = new AppSettings(true);
         settings.setTitle("Monos en Guardia");
-        settings.setSettingsDialogImage("Interface/INICIO.png");
+        settings.setSettingsDialogImage("Interface/INICIO_X.jpeg");
         settings.setFullscreen(true);
         settings.setResolution(1024, 768);
         settings.setFrameRate(60); // Establece el framerate deseado
